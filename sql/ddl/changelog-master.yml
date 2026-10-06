@@ -19,3 +19,7 @@ databaseChangeLog:
   - include:
       file: bronze/005_product_raw.sql
       relativeToChangelogFile: true
+
+  - include:
+      file: bronze/006_ingestion_file_log.sql
+      relativeToChangelogFile: true
