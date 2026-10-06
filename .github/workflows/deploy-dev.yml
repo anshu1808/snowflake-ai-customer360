@@ -1,0 +1,64 @@
+name: Deploy DEV
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Liquibase Deploy - DEV
+    runs-on: ubuntu-latest
+
+    environment:
+      name: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Liquibase
+        uses: liquibase/setup-liquibase@v2
+        with:
+          version: "5.0.4"
+
+      - name: Install Snowflake extension
+        run: |
+          liquibase lpm update
+          liquibase lpm install snowflake
+
+      - name: Create Liquibase properties
+        working-directory: sql/ddl
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+        run: |
+          envsubst < liquibase.properties.template > liquibase.properties
+
+      - name: Liquibase Status
+        working-directory: sql/ddl
+        run: |
+          liquibase \
+            --defaults-file=liquibase.properties \
+            status
+
+      - name: Liquibase Update
+        working-directory: sql/ddl
+        run: |
+          liquibase \
+            --defaults-file=liquibase.properties \
+            update

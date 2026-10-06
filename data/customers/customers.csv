@@ -1,0 +1,4 @@
+customer_id,first_name,last_name,email,phone,date_of_birth,city,state,customer_segment,customer_status,created_at,updated_at
+C001,Rahul,Sharma,rahul@example.com,9876543210,1995-04-12,Pune,MH,PREMIUM,ACTIVE,2025-01-10 10:00:00,2026-01-05 11:00:00
+C002,Priya,Patel,priya@example.com,9876543211,1992-08-20,Mumbai,MH,STANDARD,ACTIVE,2025-02-15 09:00:00,2026-01-07 12:00:00
+C003,Amit,Kumar,amit@example.com,9876543212,1990-12-01,Delhi,DL,PREMIUM,ACTIVE,2025-03-01 08:30:00,2026-01-08 14:00:00
