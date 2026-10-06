@@ -44,10 +44,10 @@ jobs:
 
       - name: Download Snowflake JDBC Driver
         run: |
-          mkdir -p liquibase/lib
+          mkdir -p drivers
           curl -L \
           https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.25.1/snowflake-jdbc-3.25.1.jar \
-          -o liquibase/lib/snowflake-jdbc.jar
+          -o drivers/snowflake-jdbc.jar
 
       - name: Liquibase Status
         working-directory: sql/ddl
@@ -61,7 +61,7 @@ jobs:
           SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
         run: |
           liquibase \
-            --classpath=../../liquibase/lib/snowflake-jdbc.jar \
+            --classpath=../../drivers/snowflake-jdbc.jar \
             --defaults-file=liquibase.properties \
             status
 
@@ -77,6 +77,6 @@ jobs:
           SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
         run: |
           liquibase \
-            --classpath=../../liquibase/lib/snowflake-jdbc.jar \
+            --classpath=../../drivers/snowflake-jdbc.jar \
             --defaults-file=liquibase.properties \
             update
