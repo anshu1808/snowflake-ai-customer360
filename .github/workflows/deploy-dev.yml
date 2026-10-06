@@ -26,10 +26,12 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Install Liquibase
-        uses: liquibase/setup-liquibase@v2
+      - name: Setup Liquibase
+        uses: liquibase-github-actions/setup-liquibase@v1
         with:
-          version: "5.0.4"
+          version: '5.0.1'
+          edition: 'community'
+
 
       - name: Install Snowflake extension
         run: |
