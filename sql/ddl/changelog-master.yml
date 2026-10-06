@@ -3,19 +3,3 @@ databaseChangeLog:
   - include:
       file: bronze/001_customer_raw.sql
       relativeToChangelogFile: true
-
-  - include:
-      file: bronze/002_account_raw.sql
-      relativeToChangelogFile: true
-
-  - include:
-      file: bronze/003_transaction_raw.sql
-      relativeToChangelogFile: true
-
-  - include:
-      file: bronze/004_support_ticket_raw.sql
-      relativeToChangelogFile: true
-
-  - include:
-      file: bronze/005_product_raw.sql
-      relativeToChangelogFile: true
