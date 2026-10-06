@@ -30,19 +30,14 @@ jobs:
         run: |
           curl -L https://github.com/liquibase/liquibase/releases/download/v5.0.1/liquibase-5.0.1.tar.gz -o liquibase.tar.gz
           tar -xzf liquibase.tar.gz
-          echo "$PWD/liquibase" >> $GITHUB_PATH
+          chmod +x liquibase
+          echo "$PWD" >> $GITHUB_PATH
 
       - name: Verify Liquibase
-        run: liquibase --version
+        run: |
+          liquibase --version
 
-      - name: Setup Liquibase
-        uses: liquibase-github-actions/setup-liquibase@v1
-        with:
-          version: '5.0.1'
-          edition: 'community'
-
-
-      - name: Install Snowflake extension
+      - name: Install Snowflake Extension
         run: |
           liquibase lpm update
           liquibase lpm install snowflake
@@ -58,9 +53,7 @@ jobs:
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
           SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
         run: |
-          liquibase \
-            --defaults-file=liquibase.properties \
-            status
+          liquibase --defaults-file=liquibase.properties status
 
       - name: Liquibase Update
         working-directory: sql/ddl
@@ -73,6 +66,4 @@ jobs:
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
           SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
         run: |
-          liquibase \
-            --defaults-file=liquibase.properties \
-            update
+          liquibase --defaults-file=liquibase.properties update
