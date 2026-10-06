@@ -49,6 +49,15 @@ jobs:
           https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.25.1/snowflake-jdbc-3.25.1.jar \
           -o drivers/snowflake-jdbc.jar
 
+      - name: Debug Snowflake Variables
+        run: |
+          echo "ACCOUNT=$SNOWFLAKE_ACCOUNT"
+          echo "DATABASE=$SNOWFLAKE_DATABASE"
+          echo "SCHEMA=$SNOWFLAKE_SCHEMA"
+          echo "WAREHOUSE=$SNOWFLAKE_WAREHOUSE"
+          echo "ROLE=$SNOWFLAKE_ROLE"
+          echo "USER=$SNOWFLAKE_USER"
+
       - name: Liquibase Status
         working-directory: sql/ddl
         env:
@@ -62,7 +71,10 @@ jobs:
         run: |
           liquibase \
             --classpath=../../drivers/snowflake-jdbc.jar \
-            --defaults-file=liquibase.properties \
+            --url="jdbc:snowflake://$SNOWFLAKE_ACCOUNT.snowflakecomputing.com/?db=$SNOWFLAKE_DATABASE&schema=$SNOWFLAKE_SCHEMA&warehouse=$SNOWFLAKE_WAREHOUSE&role=$SNOWFLAKE_ROLE" \
+            --username="$SNOWFLAKE_USER" \
+            --password="$SNOWFLAKE_PASSWORD" \
+            --changelog-file=changelog-master.yml \
             status
 
       - name: Liquibase Update
@@ -78,5 +90,8 @@ jobs:
         run: |
           liquibase \
             --classpath=../../drivers/snowflake-jdbc.jar \
-            --defaults-file=liquibase.properties \
+            --url="jdbc:snowflake://$SNOWFLAKE_ACCOUNT.snowflakecomputing.com/?db=$SNOWFLAKE_DATABASE&schema=$SNOWFLAKE_SCHEMA&warehouse=$SNOWFLAKE_WAREHOUSE&role=$SNOWFLAKE_ROLE" \
+            --username="$SNOWFLAKE_USER" \
+            --password="$SNOWFLAKE_PASSWORD" \
+            --changelog-file=changelog-master.yml \
             update
