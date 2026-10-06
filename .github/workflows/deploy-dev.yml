@@ -26,6 +26,15 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Install Liquibase
+        run: |
+          curl -L https://github.com/liquibase/liquibase/releases/download/v5.0.1/liquibase-5.0.1.tar.gz -o liquibase.tar.gz
+          tar -xzf liquibase.tar.gz
+          echo "$PWD/liquibase" >> $GITHUB_PATH
+
+      - name: Verify Liquibase
+        run: liquibase --version
+
       - name: Setup Liquibase
         uses: liquibase-github-actions/setup-liquibase@v1
         with:
