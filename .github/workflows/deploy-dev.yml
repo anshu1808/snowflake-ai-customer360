@@ -42,6 +42,13 @@ jobs:
           liquibase lpm update
           liquibase lpm install snowflake
 
+      - name: Download Snowflake JDBC Driver
+        run: |
+          mkdir -p liquibase/lib
+          curl -L \
+          https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.25.1/snowflake-jdbc-3.25.1.jar \
+          -o liquibase/lib/snowflake-jdbc.jar
+
       - name: Liquibase Status
         working-directory: sql/ddl
         env:
@@ -53,7 +60,10 @@ jobs:
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
           SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
         run: |
-          liquibase --defaults-file=liquibase.properties status
+          liquibase \
+            --classpath=../../liquibase/lib/snowflake-jdbc.jar \
+            --defaults-file=liquibase.properties \
+            status
 
       - name: Liquibase Update
         working-directory: sql/ddl
@@ -66,4 +76,7 @@ jobs:
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
           SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
         run: |
-          liquibase --defaults-file=liquibase.properties update
+          liquibase \
+            --classpath=../../liquibase/lib/snowflake-jdbc.jar \
+            --defaults-file=liquibase.properties \
+            update
