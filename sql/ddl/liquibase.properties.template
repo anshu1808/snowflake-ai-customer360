@@ -1,0 +1,8 @@
+liquibase.command.url=jdbc:snowflake://${SNOWFLAKE_ACCOUNT}.snowflakecomputing.com/?db=${SNOWFLAKE_DATABASE}&schema=${SNOWFLAKE_SCHEMA}&warehouse=${SNOWFLAKE_WAREHOUSE}&role=${SNOWFLAKE_ROLE}
+
+liquibase.command.username=${SNOWFLAKE_USERNAME}
+liquibase.command.password=${SNOWFLAKE_PASSWORD}
+
+liquibase.command.defaultSchemaName=${SNOWFLAKE_SCHEMA}
+
+liquibase.changelogFile=changelog-master.yml
