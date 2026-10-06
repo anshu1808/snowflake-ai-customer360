@@ -1,0 +1,6 @@
+customer_id,first_name,last_name,email,phone,date_of_birth,city,state,customer_segment,customer_status,created_at,updated_at
+CUST001,Anshu,Kumar,anshu@example.com,9876543210,1998-05-12,Ahmedabad,Gujarat,PREMIUM,ACTIVE,2024-01-10 10:00:00,2026-09-01 09:30:00
+CUST002,Rahul,Sharma,rahul@example.com,9876543211,1995-08-21,Pune,Maharashtra,STANDARD,ACTIVE,2024-03-15 11:00:00,2026-08-25 14:20:00
+CUST003,Priya,Patel,priya@example.com,9876543212,1999-02-17,Mumbai,Maharashtra,PREMIUM,ACTIVE,2024-05-20 08:30:00,2026-09-03 16:45:00
+CUST004,Amit,Verma,amit@example.com,9876543213,1992-11-03,Delhi,Delhi,STANDARD,INACTIVE,2023-09-12 12:15:00,2026-07-18 10:10:00
+CUST005,Neha,Singh,neha@example.com,9876543214,1997-06-28,Bengaluru,Karnataka,PREMIUM,ACTIVE,2024-07-01 09:00:00,2026-09-05 18:00:00
