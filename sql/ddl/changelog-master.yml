@@ -1,0 +1,21 @@
+databaseChangeLog:
+
+  - include:
+      file: bronze/001-customer-raw.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: bronze/002-account-raw.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: bronze/003-transaction-raw.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: bronze/004-support-ticket-raw.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: bronze/005-product-raw.sql
+      relativeToChangelogFile: true
