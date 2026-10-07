@@ -47,10 +47,15 @@ jobs:
           liquibase lpm install snowflake
 
       - name: Download Snowflake JDBC Driver
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p drivers
-          curl -L -o drivers/snowflake-jdbc.jar "https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.25.1/snowflake-jdbc-3.25.1.jar"
-          ls -lh drivers/snowflake-jdbc.jar
+          curl --fail --show-error --location \
+            --output drivers/snowflake-jdbc.jar \
+            "https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.25.1/snowflake-jdbc-3.25.1.jar"
+          test -s drivers/snowflake-jdbc.jar
+          echo "Snowflake JDBC driver downloaded successfully."
 
       - name: Debug Snowflake Variables
         run: |
