@@ -1,0 +1,104 @@
+name: Deploy QA
+
+on:
+  push:
+    branches:
+      - qa
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Liquibase Deploy - QA
+    runs-on: ubuntu-latest
+
+    environment:
+      name: qa
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Liquibase
+        run: |
+          curl -L https://github.com/liquibase/liquibase/releases/download/v5.0.1/liquibase-5.0.1.tar.gz -o liquibase.tar.gz
+          tar -xzf liquibase.tar.gz
+          chmod +x liquibase
+          echo "$PWD" >> $GITHUB_PATH
+
+      - name: Verify Liquibase
+        run: |
+          liquibase --version
+
+      - name: Install Snowflake Extension
+        run: |
+          liquibase lpm update
+          liquibase lpm install snowflake
+
+      - name: Download Snowflake JDBC Driver
+        run: |
+          mkdir -p drivers
+          curl -L \
+          https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.25.1/snowflake-jdbc-3.25.1.jar \
+          -o drivers/snowflake-jdbc.jar
+
+      - name: Debug Snowflake Variables
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+        run: |
+          echo "ACCOUNT=$SNOWFLAKE_ACCOUNT"
+          echo "DATABASE=$SNOWFLAKE_DATABASE"
+          echo "SCHEMA=$SNOWFLAKE_SCHEMA"
+          echo "WAREHOUSE=$SNOWFLAKE_WAREHOUSE"
+          echo "ROLE=$SNOWFLAKE_ROLE"
+          echo "USER=$SNOWFLAKE_USER"
+
+      - name: Liquibase Status
+        working-directory: sql/ddl
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+        run: |
+          liquibase \
+            --classpath=../../drivers/snowflake-jdbc.jar \
+            --url="jdbc:snowflake://$SNOWFLAKE_ACCOUNT.snowflakecomputing.com/?db=$SNOWFLAKE_DATABASE&schema=$SNOWFLAKE_SCHEMA&warehouse=$SNOWFLAKE_WAREHOUSE&role=$SNOWFLAKE_ROLE" \
+            --username="$SNOWFLAKE_USER" \
+            --password="$SNOWFLAKE_PASSWORD" \
+            --changelog-file=changelog-master.yml \
+            status
+
+      - name: Liquibase Update
+        working-directory: sql/ddl
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+        run: |
+          liquibase \
+            --classpath=../../drivers/snowflake-jdbc.jar \
+            --url="jdbc:snowflake://$SNOWFLAKE_ACCOUNT.snowflakecomputing.com/?db=$SNOWFLAKE_DATABASE&schema=$SNOWFLAKE_SCHEMA&warehouse=$SNOWFLAKE_WAREHOUSE&role=$SNOWFLAKE_ROLE" \
+            --username="$SNOWFLAKE_USER" \
+            --password="$SNOWFLAKE_PASSWORD" \
+            --changelog-file=changelog-master.yml \
+            update
