@@ -1,0 +1,7 @@
+ticket_id,customer_id,created_at,category,priority,status,subject,description
+TKT001,CUST001,2026-09-01 09:15:00,CARD,HIGH,OPEN,Card payment declined,Customer reported a declined card payment.
+TKT002,CUST002,2026-09-01 11:30:00,ACCOUNT,MEDIUM,CLOSED,Account statement,Customer requested latest account statement.
+TKT003,CUST003,2026-09-02 14:20:00,TRANSACTION,HIGH,OPEN,Unknown transaction,Customer reported an unfamiliar transaction.
+TKT004,CUST004,2026-09-03 10:05:00,ACCOUNT,LOW,CLOSED,Account closure,Customer requested account closure information.
+TKT005,CUST005,2026-09-04 16:45:00,LOAN,MEDIUM,IN_PROGRESS,Loan application status,Customer requested an update on loan application.
+TKT006,CUST001,2026-09-05 12:10:00,CARD,LOW,CLOSED,Card delivery,Customer asked about card delivery status.

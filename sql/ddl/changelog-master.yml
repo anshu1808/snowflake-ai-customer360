@@ -1,21 +1,49 @@
 databaseChangeLog:
 
   - include:
-      file: bronze/001-customer-raw.sql
+      file: bronze/001_customer_raw.sql
       relativeToChangelogFile: true
 
   - include:
-      file: bronze/002-account-raw.sql
+      file: bronze/002_account_raw.sql
       relativeToChangelogFile: true
 
   - include:
-      file: bronze/003-transaction-raw.sql
+      file: bronze/003_transaction_raw.sql
       relativeToChangelogFile: true
 
   - include:
-      file: bronze/004-support-ticket-raw.sql
+      file: bronze/004_support_ticket_raw.sql
       relativeToChangelogFile: true
 
   - include:
-      file: bronze/005-product-raw.sql
+      file: bronze/005_product_raw.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: bronze/006_ingestion_file_log.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: silver/001_customer.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: silver/002_account.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: silver/003_transaction.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: silver/004_support_ticket.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: silver/005_product.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: silver/006_customer_add_tier.sql
       relativeToChangelogFile: true

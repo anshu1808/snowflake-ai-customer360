@@ -1,24 +1,24 @@
-name: Deploy DEV
+name: Deploy QA
 
 on:
   push:
     branches:
-      - dev
+      - qa
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-dev
+  group: deploy-qa
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Liquibase Deploy - DEV
+    name: Liquibase Deploy - QA
     runs-on: ubuntu-latest
 
     environment:
-      name: dev
+      name: qa
 
     steps:
       - name: Checkout
@@ -56,6 +56,13 @@ jobs:
           -o drivers/snowflake-jdbc.jar
 
       - name: Debug Snowflake Variables
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
         run: |
           echo "ACCOUNT=$SNOWFLAKE_ACCOUNT"
           echo "DATABASE=$SNOWFLAKE_DATABASE"
