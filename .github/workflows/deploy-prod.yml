@@ -1,24 +1,24 @@
-name: Deploy QA
+name: Deploy PROD
 
 on:
   push:
     branches:
-      - qa
+      - main
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-qa
+  group: deploy-prod
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Liquibase Deploy - QA
+    name: Liquibase Deploy - PROD
     runs-on: ubuntu-latest
 
     environment:
-      name: qa
+      name: prod
 
     steps:
       - name: Checkout

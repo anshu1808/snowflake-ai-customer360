@@ -102,13 +102,13 @@ def load_csv(
         )
 
         # ---------------------------------------------------------
-        # Upload file
+        # Upload file to per-source stage path
         # ---------------------------------------------------------
 
         cursor.execute(
             f"""
             PUT 'file://{file_path.as_posix()}'
-            @{BRONZE_STAGE}
+            @{BRONZE_STAGE}/{source_name}/
             AUTO_COMPRESS=TRUE
             OVERWRITE=TRUE
             """
@@ -117,13 +117,14 @@ def load_csv(
         column_list = ", ".join(columns)
 
         # ---------------------------------------------------------
-        # Load Bronze
+        # Load Bronze with explicit stage subpath and filename
         # ---------------------------------------------------------
 
         cursor.execute(
             f"""
             COPY INTO {table_name} ({column_list})
-            FROM @{BRONZE_STAGE}
+            FROM @{BRONZE_STAGE}/{source_name}/
+            FILES = ('{file_name}.gz')
             FILE_FORMAT = (
                 TYPE = CSV
                 FIELD_OPTIONALLY_ENCLOSED_BY = '"'
@@ -174,8 +175,31 @@ def load_csv(
         return rows_loaded
 
     except Exception:
-
-        connection.rollback()
+        try:
+            connection.rollback()
+            cursor.execute(
+                f"""
+                INSERT INTO {INGESTION_LOG}
+                (
+                    SOURCE_NAME,
+                    FILE_NAME,
+                    FILE_SIZE,
+                    FILE_HASH,
+                    ROWS_LOADED,
+                    LOAD_STATUS
+                )
+                VALUES (%s, %s, %s, %s, 0, 'FAILED')
+                """,
+                (
+                    source_name,
+                    file_name,
+                    file_size,
+                    file_hash,
+                ),
+            )
+            connection.commit()
+        except Exception:
+            pass
 
         raise
 
