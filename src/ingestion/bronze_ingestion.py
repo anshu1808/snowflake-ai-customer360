@@ -155,7 +155,6 @@ def validate_source(df: pd.DataFrame, config: dict) -> None:
     validate_not_null(df, config["key"])
     validate_unique(df, config["key"])
 
-
 def ingest(source_name: str) -> None:
 
     config = SOURCE_CONFIG[source_name]
@@ -183,6 +182,7 @@ def ingest(source_name: str) -> None:
             file_path=file_path,
             table_name=config["table"],
             columns=config["columns"],
+            source_name=source_name,
         )
 
         print(
