@@ -49,9 +49,8 @@ jobs:
       - name: Download Snowflake JDBC Driver
         run: |
           mkdir -p drivers
-          curl -L \
-            "https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.25.1/snowflake-jdbc-3.25.1.jar" \
-            -o drivers/snowflake-jdbc.jar
+          curl -L -o drivers/snowflake-jdbc.jar "https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.25.1/snowflake-jdbc-3.25.1.jar"
+          ls -lh drivers/snowflake-jdbc.jar
 
       - name: Debug Snowflake Variables
         run: |
