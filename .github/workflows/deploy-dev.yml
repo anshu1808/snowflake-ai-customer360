@@ -52,6 +52,17 @@ jobs:
           curl -L \
             https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.25.1/snowflake-jdbc-3.25.1.jar \
             -o drivers/snowflake-jdbc.jar
+          https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.25.1/snowflake-jdbc-3.25.1.jar \
+          -o drivers/snowflake-jdbc.jar
+
+      - name: Debug Snowflake Variables
+        run: |
+          echo "ACCOUNT=$SNOWFLAKE_ACCOUNT"
+          echo "DATABASE=$SNOWFLAKE_DATABASE"
+          echo "SCHEMA=$SNOWFLAKE_SCHEMA"
+          echo "WAREHOUSE=$SNOWFLAKE_WAREHOUSE"
+          echo "ROLE=$SNOWFLAKE_ROLE"
+          echo "USER=$SNOWFLAKE_USER"
 
       - name: Liquibase Status
         working-directory: sql/ddl
@@ -59,6 +70,7 @@ jobs:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
           LIQUIBASE_COMMAND_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
@@ -68,6 +80,7 @@ jobs:
             --classpath=../../drivers/snowflake-jdbc.jar \
             --url="jdbc:snowflake://$SNOWFLAKE_ACCOUNT.snowflakecomputing.com/?db=$SNOWFLAKE_DATABASE&schema=$SNOWFLAKE_SCHEMA&warehouse=$SNOWFLAKE_WAREHOUSE&role=$SNOWFLAKE_ROLE" \
             --username="$SNOWFLAKE_USER" \
+            --password="$SNOWFLAKE_PASSWORD" \
             --changelog-file=changelog-master.yml \
             status
 
@@ -77,6 +90,7 @@ jobs:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
           LIQUIBASE_COMMAND_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
           SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
@@ -86,5 +100,6 @@ jobs:
             --classpath=../../drivers/snowflake-jdbc.jar \
             --url="jdbc:snowflake://$SNOWFLAKE_ACCOUNT.snowflakecomputing.com/?db=$SNOWFLAKE_DATABASE&schema=$SNOWFLAKE_SCHEMA&warehouse=$SNOWFLAKE_WAREHOUSE&role=$SNOWFLAKE_ROLE" \
             --username="$SNOWFLAKE_USER" \
+            --password="$SNOWFLAKE_PASSWORD" \
             --changelog-file=changelog-master.yml \
             update
