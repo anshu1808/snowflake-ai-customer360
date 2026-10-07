@@ -43,7 +43,3 @@ databaseChangeLog:
   - include:
       file: silver/005_product.sql
       relativeToChangelogFile: true
-
-  - include:
-      file: silver/006_customer_add_tier.sql
-      relativeToChangelogFile: true
