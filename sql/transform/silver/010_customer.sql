@@ -1,0 +1,47 @@
+-- Silver: latest version of each customer, cleaned and standardised.
+-- Idempotent: safe to re-run. Source is append-only BRONZE.CUSTOMER_RAW.
+
+MERGE INTO SILVER.CUSTOMER AS t
+USING (
+    SELECT
+        UPPER(TRIM(CUSTOMER_ID))                          AS CUSTOMER_ID,
+        INITCAP(TRIM(FIRST_NAME))                         AS FIRST_NAME,
+        INITCAP(TRIM(LAST_NAME))                          AS LAST_NAME,
+        LOWER(TRIM(EMAIL))                                AS EMAIL,
+        NULLIF(REGEXP_REPLACE(PHONE, '[^0-9]', ''), '')   AS PHONE,
+        DATE_OF_BIRTH,
+        INITCAP(TRIM(CITY))                               AS CITY,
+        INITCAP(TRIM(STATE))                              AS STATE,
+        UPPER(TRIM(CUSTOMER_SEGMENT))                     AS CUSTOMER_SEGMENT,
+        UPPER(TRIM(CUSTOMER_STATUS))                      AS CUSTOMER_STATUS,
+        CREATED_AT,
+        UPDATED_AT,
+        INGESTED_AT
+    FROM BRONZE.CUSTOMER_RAW
+    WHERE NULLIF(TRIM(CUSTOMER_ID), '') IS NOT NULL
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY UPPER(TRIM(CUSTOMER_ID))
+        ORDER BY UPDATED_AT DESC NULLS LAST, INGESTED_AT DESC NULLS LAST
+    ) = 1
+) AS s
+ON t.CUSTOMER_ID = s.CUSTOMER_ID
+WHEN MATCHED AND (t.UPDATED_AT IS NULL OR s.UPDATED_AT > t.UPDATED_AT) THEN UPDATE SET
+    FIRST_NAME       = s.FIRST_NAME,
+    LAST_NAME        = s.LAST_NAME,
+    EMAIL            = s.EMAIL,
+    PHONE            = s.PHONE,
+    DATE_OF_BIRTH    = s.DATE_OF_BIRTH,
+    CITY             = s.CITY,
+    STATE            = s.STATE,
+    CUSTOMER_SEGMENT = s.CUSTOMER_SEGMENT,
+    CUSTOMER_STATUS  = s.CUSTOMER_STATUS,
+    CREATED_AT       = s.CREATED_AT,
+    UPDATED_AT       = s.UPDATED_AT,
+    INGESTED_AT      = s.INGESTED_AT
+WHEN NOT MATCHED THEN INSERT (
+    CUSTOMER_ID, FIRST_NAME, LAST_NAME, EMAIL, PHONE, DATE_OF_BIRTH, CITY, STATE,
+    CUSTOMER_SEGMENT, CUSTOMER_STATUS, CREATED_AT, UPDATED_AT, INGESTED_AT
+) VALUES (
+    s.CUSTOMER_ID, s.FIRST_NAME, s.LAST_NAME, s.EMAIL, s.PHONE, s.DATE_OF_BIRTH, s.CITY, s.STATE,
+    s.CUSTOMER_SEGMENT, s.CUSTOMER_STATUS, s.CREATED_AT, s.UPDATED_AT, s.INGESTED_AT
+);
