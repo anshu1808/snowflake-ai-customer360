@@ -13,9 +13,14 @@ venv/
 !.env.example
 *.pem
 *.key
+*.p8
+*.pub
+.secrets/
 
-# Snowflake
+# Snowflake / Liquibase
 *.snowsql
+drivers/
+liquibase*.tar.gz
 
 # IDE
 .vscode/

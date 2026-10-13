@@ -1,0 +1,50 @@
+| Requirement                    | File                                    |
+| ------------------------------ | --------------------------------------- |
+| Add new source                 | `bronze_ingestion.py`                   |
+| Change CSV location            | `bronze_ingestion.py`                   |
+| Change target table            | `bronze_ingestion.py`                   |
+| Add validation                 | `validators.py` / `bronze_ingestion.py` |
+| Change Snowflake connection    | `config.py` / environment               |
+| Change PUT/COPY behavior       | `snowflake_loader.py`                   |
+| Add Bronze column              | New `sql/ddl/bronze/*.sql`              |
+| Add Silver column              | New `sql/ddl/silver/*.sql`              |
+| Create new table               | New Liquibase SQL changeset             |
+| Modify existing table          | **New** Liquibase SQL changeset         |
+| Register new changeset         | `changelog-master.yml`                  |
+| Change DEV/QA/PROD credentials | GitHub Environment Secrets              |
+| Change deployment process      | `.github/workflows/*.yml`               |
+| Change Python dependencies     | `requirements.txt`                      |
+| Change tests                   | `tests/`                                |
+____________________________________________________________________________
+
+--------------Git workflow---------
+
+[1] Create feature branch
+        ↓
+[2] Modify/create SQL
+        ↓
+[3] Update changelog-master.yml
+        ↓
+[4] Test locally
+        ↓
+[5] git add
+        ↓
+[6] git commit
+        ↓
+[7] git push feature branch
+        ↓
+[8] Create PR → dev
+        ↓
+[9] GitHub CI
+        ↓
+[10] Merge to dev
+        ↓
+[11] Liquibase deploy DEV
+        ↓
+[12] Test DEV
+        ↓
+[13] Promote QA
+        ↓
+[14] QA
+        ↓
+[15] PROD approval

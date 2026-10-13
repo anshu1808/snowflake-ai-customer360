@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 import pandas as pd
@@ -9,7 +10,6 @@ from .validators import (
     validate_required_columns,
     validate_unique,
 )
-
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
@@ -155,7 +155,7 @@ def validate_source(df: pd.DataFrame, config: dict) -> None:
     validate_not_null(df, config["key"])
     validate_unique(df, config["key"])
 
-def ingest(source_name: str) -> None:
+def ingest(source_name: str, force: bool = False) -> None:
 
     config = SOURCE_CONFIG[source_name]
     file_path = config["file"]
@@ -183,22 +183,36 @@ def ingest(source_name: str) -> None:
             table_name=config["table"],
             columns=config["columns"],
             source_name=source_name,
+            force=force,
         )
 
         print(
             f"Loaded {rows_loaded} rows into "
             f"{snowflake_config['SNOWFLAKE_DATABASE']}"
-            f".BRONZE.{config['table']}"
+            f".{snowflake_config['SNOWFLAKE_SCHEMA']}.{config['table']}"
         )
 
     finally:
         connection.close()
 
 
-def main():
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description="Load source CSVs into Bronze.")
+    parser.add_argument(
+        "sources",
+        nargs="*",
+        choices=list(SOURCE_CONFIG),
+        help="Sources to load (default: all).",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Reload even if the file hash is already logged as loaded.",
+    )
+    args = parser.parse_args(argv)
 
-    for source_name in SOURCE_CONFIG:
-        ingest(source_name)
+    for source_name in args.sources or SOURCE_CONFIG:
+        ingest(source_name, force=args.force)
 
     print("\nBronze ingestion completed successfully.")
 
