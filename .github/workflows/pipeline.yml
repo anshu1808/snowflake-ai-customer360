@@ -1,0 +1,67 @@
+# Run the data pipeline (ingest -> silver -> gold -> quality) on a schedule or on demand.
+# Scheduled runs target DEV. Note: GitHub only runs schedules from the default branch.
+name: Data pipeline
+
+on:
+  schedule:
+    - cron: "30 20 * * *"   # 02:00 IST daily
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment
+        type: choice
+        options: [dev, qa, prod]
+        default: dev
+      step:
+        description: Pipeline step
+        type: choice
+        options: [all, ingest, silver, gold, quality, ai, security]
+        default: all
+      force:
+        description: Reload files already loaded (ingest/all only)
+        type: boolean
+        default: false
+      as_of:
+        description: "Optional fixed as-of timestamp, e.g. 2026-09-10 (reproducible demos)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: ${{ inputs.step || 'all' }} on ${{ inputs.environment || 'dev' }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'dev' }}
+    concurrency:
+      group: pipeline-${{ inputs.environment || 'dev' }}
+      cancel-in-progress: false
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+      SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      PIPELINE_AS_OF: ${{ inputs.as_of }}
+      STEP: ${{ inputs.step || 'all' }}
+      FORCE: ${{ inputs.force && '--force' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ (inputs.environment || 'dev') == 'prod' && 'main' || (inputs.environment || 'dev') }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - run: pip install -r requirements.txt
+
+      - name: Run pipeline step
+        run: python -m src.pipeline.run "$STEP" $FORCE

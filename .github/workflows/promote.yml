@@ -1,0 +1,39 @@
+# Open a promotion PR: dev -> qa, or qa -> main (PROD). Merge it to deploy.
+# Requires: Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests".
+name: Promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Promote into
+        type: choice
+        options: [qa, main]
+        default: qa
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open-pr:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create pull request
+        run: |
+          set -euo pipefail
+          if [ "$TARGET" = "qa" ]; then SOURCE=dev; else SOURCE=qa; fi
+          existing=$(gh pr list --base "$TARGET" --head "$SOURCE" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "PR #$existing already open for $SOURCE -> $TARGET"
+            exit 0
+          fi
+          gh pr create \
+            --base "$TARGET" --head "$SOURCE" \
+            --title "Promote $SOURCE -> $TARGET" \
+            --body "Automated promotion. CI must pass; merging deploys to the $TARGET environment."
