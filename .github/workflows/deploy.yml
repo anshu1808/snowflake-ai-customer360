@@ -1,0 +1,114 @@
+# Reusable deployment: Liquibase DDL, then (optionally) the data pipeline.
+# Called by deploy-dev.yml / deploy-qa.yml / deploy-prod.yml.
+name: Deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub Environment (dev | qa | prod)
+        required: true
+        type: string
+      pipeline_step:
+        description: "Pipeline step to run after DDL: all | silver | gold | quality | none"
+        required: false
+        type: string
+        default: none
+
+permissions:
+  contents: read
+
+env:
+  LIQUIBASE_VERSION: "5.0.1"
+  LIQUIBASE_SHA256: 3ae11ccdcd4c080e421e5fd043bdbd624d56fcfc9b294d5d9d898cb8b074e449
+  SNOWFLAKE_JDBC_VERSION: "3.25.1"
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+      SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      LIQUIBASE_COMMAND_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Liquibase (checksum-pinned)
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            "https://github.com/liquibase/liquibase/releases/download/v${LIQUIBASE_VERSION}/liquibase-${LIQUIBASE_VERSION}.tar.gz" \
+            -o liquibase.tar.gz
+          echo "${LIQUIBASE_SHA256}  liquibase.tar.gz" | sha256sum --check -
+          mkdir -p "$RUNNER_TEMP/liquibase"
+          tar -xzf liquibase.tar.gz -C "$RUNNER_TEMP/liquibase"
+          echo "$RUNNER_TEMP/liquibase" >> "$GITHUB_PATH"
+
+      - name: Install Liquibase Snowflake extension
+        run: |
+          liquibase --version
+          liquibase lpm update
+          liquibase lpm install snowflake
+
+      - name: Download Snowflake JDBC driver (verified)
+        run: |
+          set -euo pipefail
+          base="https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/${SNOWFLAKE_JDBC_VERSION}"
+          mkdir -p drivers
+          curl --fail --silent --show-error --location -o drivers/snowflake-jdbc.jar \
+            "${base}/snowflake-jdbc-${SNOWFLAKE_JDBC_VERSION}.jar"
+          expected=$(curl --fail --silent --show-error --location "${base}/snowflake-jdbc-${SNOWFLAKE_JDBC_VERSION}.jar.sha1")
+          echo "${expected%% *}  drivers/snowflake-jdbc.jar" | sha1sum --check -
+
+      - name: Liquibase status
+        working-directory: sql/ddl
+        run: |
+          liquibase \
+            --classpath=../../drivers/snowflake-jdbc.jar \
+            --url="jdbc:snowflake://${SNOWFLAKE_ACCOUNT}.snowflakecomputing.com/?db=${SNOWFLAKE_DATABASE}&schema=${SNOWFLAKE_SCHEMA}&warehouse=${SNOWFLAKE_WAREHOUSE}&role=${SNOWFLAKE_ROLE}" \
+            --username="${SNOWFLAKE_USER}" \
+            --changelog-file=changelog-master.yml \
+            status --verbose
+
+      - name: Liquibase update
+        working-directory: sql/ddl
+        run: |
+          liquibase \
+            --classpath=../../drivers/snowflake-jdbc.jar \
+            --url="jdbc:snowflake://${SNOWFLAKE_ACCOUNT}.snowflakecomputing.com/?db=${SNOWFLAKE_DATABASE}&schema=${SNOWFLAKE_SCHEMA}&warehouse=${SNOWFLAKE_WAREHOUSE}&role=${SNOWFLAKE_ROLE}" \
+            --username="${SNOWFLAKE_USER}" \
+            --changelog-file=changelog-master.yml \
+            update
+
+      - uses: actions/setup-python@v5
+        if: inputs.pipeline_step != 'none'
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install Python dependencies
+        if: inputs.pipeline_step != 'none'
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline (${{ inputs.pipeline_step }})
+        if: inputs.pipeline_step != 'none'
+        run: python -m src.pipeline.run "${{ inputs.pipeline_step }}"
