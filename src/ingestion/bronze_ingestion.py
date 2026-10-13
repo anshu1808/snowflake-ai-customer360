@@ -150,10 +150,12 @@ SOURCE_CONFIG = {
     },
 }
 
+
 def validate_source(df: pd.DataFrame, config: dict) -> None:
     validate_required_columns(df, config["required"])
     validate_not_null(df, config["key"])
     validate_unique(df, config["key"])
+
 
 def ingest(source_name: str, force: bool = False) -> None:
 
@@ -161,9 +163,7 @@ def ingest(source_name: str, force: bool = False) -> None:
     file_path = config["file"]
 
     if not file_path.exists():
-        raise FileNotFoundError(
-            f"Source file not found: {file_path}"
-        )
+        raise FileNotFoundError(f"Source file not found: {file_path}")
 
     df = pd.read_csv(file_path)
 

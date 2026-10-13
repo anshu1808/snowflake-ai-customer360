@@ -48,3 +48,1727 @@ ____________________________________________________________________________
 [14] QA
         ↓
 [15] PROD approval
+
+-------------------UNDERSTANDING---------
+
+
+              GITHUB
+                 │
+        ┌────────┴────────┐
+        │                 │
+     Python             Liquibase
+   ingestion              DDL
+        │                 │
+        │                 │
+   HOW data loads    WHAT tables exist
+        │                 │
+        └────────┬────────┘
+                 ↓
+             SNOWFLAKE
+                 │
+       ┌─────────┼─────────┐
+       ↓         ↓         ↓
+    BRONZE     SILVER     GOLD
+
+
+                 FILE ARRIVES
+                      │
+                      ▼
+              FILE HASH CREATED
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+     Same hash               New hash
+          │                       │
+       SKIP                    LOAD
+                                  │
+                                  ▼
+                             BRONZE RAW
+                                  │
+                                  ▼
+                         SILVER transformations
+                                  │
+                                  ▼
+                              GOLD 360
+
+============================================================
+SNOWFLAKE AI CUSTOMER 360
+COMMAND CHEAT SHEET
+============================================================
+
+PROJECT PATH
+-------------
+C:\Users\kenexai\snowflake project\snowflake-ai-customer360
+
+
+============================================================
+1. POWERSHELL / PROJECT COMMANDS
+============================================================
+
+cd "C:\Users\kenexai\snowflake project\snowflake-ai-customer360"
+
+Purpose:
+Move to the project root.
+
+
+Get-Location
+
+Purpose:
+Show current directory.
+
+
+Get-ChildItem
+
+Purpose:
+List files and folders.
+
+
+Get-ChildItem -Recurse
+
+Purpose:
+List the complete project structure.
+
+
+code .
+
+Purpose:
+Open current project in VS Code / Antigravity.
+
+
+============================================================
+2. PYTHON VIRTUAL ENVIRONMENT
+============================================================
+
+python --version
+
+Purpose:
+Check Python version.
+
+
+python -m venv .venv
+
+Purpose:
+Create Python virtual environment.
+
+
+.\.venv\Scripts\Activate.ps1
+
+Purpose:
+Activate virtual environment.
+
+
+deactivate
+
+Purpose:
+Exit virtual environment.
+
+
+where.exe python
+
+Purpose:
+Check which Python executable is being used.
+
+
+python -m pip --version
+
+Purpose:
+Check pip associated with current Python.
+
+
+python -m pip install -r requirements.txt
+
+Purpose:
+Install runtime dependencies.
+
+
+python -m pip install -r requirements-dev.txt
+
+Purpose:
+Install development/test dependencies.
+
+
+python -m pip freeze
+
+Purpose:
+Show installed Python packages.
+
+
+============================================================
+3. PYTEST / CODE QUALITY
+============================================================
+
+python -m pytest
+
+Purpose:
+Run all tests.
+
+
+python -m pytest -v
+
+Purpose:
+Run all tests with detailed output.
+
+
+python -m pytest tests/test_bronze_ingestion.py -v
+
+Purpose:
+Run one specific test file.
+
+
+python -m pytest tests/test_bronze_ingestion.py::test_name -v
+
+Purpose:
+Run one specific test.
+
+
+python -m pytest --collect-only
+
+Purpose:
+Show which tests pytest discovers.
+
+
+ruff check .
+
+Purpose:
+Check Python code for linting issues.
+
+
+ruff check . --fix
+
+Purpose:
+Automatically fix supported Ruff issues.
+
+
+============================================================
+4. ENVIRONMENT VARIABLES / .ENV
+============================================================
+
+Get-Content .env
+
+Purpose:
+Display local .env.
+
+WARNING:
+Do NOT paste passwords, tokens, private keys, or secrets into
+GitHub/chat.
+
+
+Test-Path .env
+
+Purpose:
+Check whether .env exists.
+
+
+Get-Content .gitignore
+
+Purpose:
+Check whether .env and other sensitive files are ignored.
+
+
+Expected local DEV configuration:
+
+SNOWFLAKE_ACCOUNT=<account>
+SNOWFLAKE_USER=<user>
+SNOWFLAKE_PASSWORD=<password>
+SNOWFLAKE_WAREHOUSE=FINAI_DEV_WH
+SNOWFLAKE_DATABASE=FINAI_DEV
+SNOWFLAKE_SCHEMA=BRONZE
+SNOWFLAKE_ROLE=FINAI_DEV_ROLE
+
+
+============================================================
+5. LOCAL BRONZE INGESTION
+============================================================
+
+python -m src.ingestion.bronze_ingestion
+
+Purpose:
+Load all configured sources.
+
+
+python -m src.ingestion.bronze_ingestion customer
+
+Purpose:
+Load customer CSV only.
+
+
+python -m src.ingestion.bronze_ingestion account
+
+Purpose:
+Load account CSV only.
+
+
+python -m src.ingestion.bronze_ingestion transaction
+
+Purpose:
+Load transaction CSV only.
+
+
+python -m src.ingestion.bronze_ingestion support
+
+Purpose:
+Load support CSV only.
+
+
+python -m src.ingestion.bronze_ingestion product
+
+Purpose:
+Load product CSV only.
+
+
+python -m src.ingestion.bronze_ingestion customer account
+
+Purpose:
+Load multiple sources.
+
+
+============================================================
+6. --force EXPLAINED
+============================================================
+
+python -m src.ingestion.bronze_ingestion customer --force
+
+Purpose:
+FORCE a reload.
+
+Use this ONLY when intentionally reloading a file.
+
+Examples:
+- You truncated CUSTOMER_RAW and want to reload it.
+- You are testing the COPY logic.
+- You intentionally want another load.
+
+Do NOT use --force during normal daily ingestion.
+
+Normal command:
+
+python -m src.ingestion.bronze_ingestion customer
+
+Expected behavior:
+
+Same filename + same SHA256 hash
+        -> SKIP
+
+Same filename + different SHA256 hash
+        -> LOAD
+
+--force
+        -> intentionally reload
+
+
+============================================================
+7. FILE HASH
+============================================================
+
+The ingestion code calculates SHA256:
+
+calculate_file_hash(file_path)
+
+Purpose:
+Identify the actual contents of a file.
+
+Example:
+
+customers.csv
+SHA256 = ABC123
+
+Tomorrow:
+
+customers.csv
+SHA256 = ABC123
+
+Result:
+Same file content -> SKIP
+
+
+Tomorrow:
+
+customers.csv
+SHA256 = XYZ789
+
+Result:
+Same filename but different content -> LOAD
+
+
+IMPORTANT:
+
+Filename is NOT the identity.
+
+Filename + content hash is the identity/version.
+
+
+============================================================
+8. LOCAL SOURCE DATA
+============================================================
+
+Get-ChildItem data -Recurse
+
+Purpose:
+Show all source data files.
+
+
+Get-Content data\customers\customers.csv
+
+Purpose:
+View customer CSV.
+
+
+Get-Content data\accounts\accounts.csv
+
+Purpose:
+View account CSV.
+
+
+Get-Content data\transactions\transactions.csv
+
+Purpose:
+View transaction CSV.
+
+
+Get-Content data\support\support.csv
+
+Purpose:
+View support CSV.
+
+
+Get-Content data\products\products.csv
+
+Purpose:
+View product CSV.
+
+
+============================================================
+9. GIT BASIC COMMANDS
+============================================================
+
+git status
+
+Purpose:
+Show modified, staged, and untracked files.
+
+
+git branch
+
+Purpose:
+Show local branches.
+
+
+git branch -a
+
+Purpose:
+Show local + remote branches.
+
+
+git branch -vv
+
+Purpose:
+Show branches and their remote tracking branches.
+
+
+git log --oneline -10
+
+Purpose:
+Show recent commits.
+
+
+git log --oneline --graph --decorate -20
+
+Purpose:
+Visual branch/commit history.
+
+
+git remote -v
+
+Purpose:
+Show GitHub remote URL.
+
+
+git diff
+
+Purpose:
+Show unstaged changes.
+
+
+git diff --cached
+
+Purpose:
+Show staged changes.
+
+
+git diff --stat
+
+Purpose:
+Show summary of changed files.
+
+
+git show <commit>
+
+Purpose:
+Show details of a specific commit.
+
+
+============================================================
+10. GIT UPDATE FROM GITHUB
+============================================================
+
+git fetch origin
+
+Purpose:
+Download latest remote branch information without changing
+your working files.
+
+
+git pull origin dev
+
+Purpose:
+Pull latest DEV branch into current branch.
+
+Use carefully when working on a feature branch.
+
+
+git switch dev
+
+Purpose:
+Switch to dev branch.
+
+
+git switch main
+
+Purpose:
+Switch to main branch.
+
+
+git switch qa
+
+Purpose:
+Switch to QA branch.
+
+
+============================================================
+11. CREATE FEATURE BRANCH
+============================================================
+
+git switch dev
+
+git pull origin dev
+
+git switch -c feature/<feature-name>
+
+Example:
+
+git switch -c feature/bronze-ingestion-fixes
+
+Purpose:
+Create a new feature branch from latest DEV.
+
+
+============================================================
+12. SAVE CHANGES
+============================================================
+
+git status
+
+git add .
+
+Purpose:
+Stage all changed files.
+
+
+git add src/ingestion/bronze_ingestion.py
+
+Purpose:
+Stage one specific file.
+
+
+git diff --cached
+
+Purpose:
+Review exactly what will be committed.
+
+
+git commit -m "Improve bronze ingestion"
+
+Purpose:
+Create commit.
+
+
+git push -u origin feature/bronze-ingestion-fixes
+
+Purpose:
+Push new feature branch to GitHub.
+
+
+============================================================
+13. GIT BRANCH SAFETY
+============================================================
+
+Never normally do:
+
+git push origin dev
+
+from a feature branch.
+
+Instead:
+
+git push origin feature/<feature-name>
+
+
+Normal workflow:
+
+dev
+ |
+ +-- feature/my-change
+          |
+          +-- commit
+          |
+          +-- push
+          |
+          +-- Pull Request
+          |
+          v
+         dev
+          |
+          v
+         qa
+          |
+          v
+        main/prod
+
+
+============================================================
+14. CHECK MERGE STATE
+============================================================
+
+git status
+
+Purpose:
+Check whether Git is currently merging/rebasing.
+
+
+If you see:
+
+You have unmerged paths
+
+or
+
+MERGING
+
+STOP.
+
+Do not create another branch until the merge is resolved.
+
+
+============================================================
+15. GITHUB CI/CD
+============================================================
+
+GitHub workflow files:
+
+.github/workflows/
+
+Typical commands:
+
+git push origin feature/<branch>
+
+Purpose:
+Push code and trigger relevant GitHub Actions/PR checks.
+
+
+GitHub Actions normally performs:
+
+checkout
+    |
+install Python
+    |
+install dependencies
+    |
+pytest
+    |
+lint
+    |
+Liquibase
+    |
+Snowflake deployment
+
+
+============================================================
+16. LIQUIBASE LOCAL COMMANDS
+============================================================
+
+liquibase --version
+
+Purpose:
+Check Liquibase installation.
+
+
+If PowerShell says:
+
+liquibase : The term 'liquibase' is not recognized
+
+then Liquibase CLI is not available in PATH.
+
+
+liquibase status
+
+Purpose:
+Show pending Liquibase changes.
+
+
+liquibase update
+
+Purpose:
+Apply pending changesets.
+
+
+liquibase update-sql
+
+Purpose:
+Generate SQL that Liquibase WOULD execute.
+Useful for reviewing changes before applying.
+
+
+liquibase history
+
+Purpose:
+Show Liquibase deployment history.
+
+
+liquibase validate
+
+Purpose:
+Validate changelog structure/checksums.
+
+
+liquibase clear-checksums
+
+Purpose:
+Clear stored checksums.
+
+IMPORTANT:
+Do NOT use this as a normal solution for checksum problems.
+Normally, deployed changesets should NOT be modified.
+
+
+============================================================
+17. LIQUIBASE DATABASE CHECK
+============================================================
+
+SELECT *
+FROM FINAI_DEV.BRONZE.DATABASECHANGELOG
+ORDER BY DATEEXECUTED DESC;
+
+
+Purpose:
+See which changesets were deployed to DEV.
+
+
+SELECT *
+FROM FINAI_QA.BRONZE.DATABASECHANGELOG
+ORDER BY DATEEXECUTED DESC;
+
+
+Purpose:
+See which changesets were deployed to QA.
+
+
+SELECT *
+FROM FINAI_DEV.BRONZE.DATABASECHANGELOGLOCK;
+
+
+Purpose:
+Check Liquibase lock.
+
+
+============================================================
+18. SNOWFLAKE OBJECT CHECKS
+============================================================
+
+SHOW DATABASES;
+
+Purpose:
+List databases.
+
+
+SHOW SCHEMAS IN DATABASE FINAI_DEV;
+
+Purpose:
+List DEV schemas.
+
+
+SHOW WAREHOUSES;
+
+Purpose:
+List warehouses.
+
+
+SHOW ROLES;
+
+Purpose:
+List roles.
+
+
+SHOW USERS;
+
+Purpose:
+List users.
+
+
+============================================================
+19. SNOWFLAKE TABLE CHECKS
+============================================================
+
+SHOW TABLES IN SCHEMA FINAI_DEV.BRONZE;
+
+Purpose:
+List Bronze tables.
+
+
+DESC TABLE FINAI_DEV.BRONZE.CUSTOMER_RAW;
+
+Purpose:
+Show table columns/types.
+
+
+DESC TABLE FINAI_DEV.BRONZE.INGESTION_FILE_LOG;
+
+Purpose:
+Inspect ingestion log design.
+
+
+SHOW TABLES IN SCHEMA FINAI_DEV.SILVER;
+
+Purpose:
+List Silver tables.
+
+
+SHOW TABLES IN SCHEMA FINAI_DEV.GOLD;
+
+Purpose:
+List Gold tables.
+
+
+============================================================
+20. BRONZE DATA CHECKS
+============================================================
+
+SELECT COUNT(*)
+FROM FINAI_DEV.BRONZE.CUSTOMER_RAW;
+
+
+SELECT COUNT(*)
+FROM FINAI_DEV.BRONZE.ACCOUNT_RAW;
+
+
+SELECT COUNT(*)
+FROM FINAI_DEV.BRONZE.TRANSACTION_RAW;
+
+
+SELECT COUNT(*)
+FROM FINAI_DEV.BRONZE.SUPPORT_TICKET_RAW;
+
+
+SELECT COUNT(*)
+FROM FINAI_DEV.BRONZE.PRODUCT_RAW;
+
+
+Purpose:
+Check row counts.
+
+
+SELECT *
+FROM FINAI_DEV.BRONZE.CUSTOMER_RAW
+LIMIT 10;
+
+
+Purpose:
+Inspect sample data.
+
+
+============================================================
+21. INGESTION LOG CHECKS
+============================================================
+
+SELECT *
+FROM FINAI_DEV.BRONZE.INGESTION_FILE_LOG
+ORDER BY LOADED_AT DESC;
+
+
+Purpose:
+See every ingestion attempt.
+
+
+SELECT
+    SOURCE_NAME,
+    FILE_NAME,
+    FILE_HASH,
+    ROWS_LOADED,
+    LOAD_STATUS,
+    LOADED_AT
+FROM FINAI_DEV.BRONZE.INGESTION_FILE_LOG
+ORDER BY LOADED_AT DESC;
+
+
+Purpose:
+View the important ingestion tracking fields.
+
+
+SELECT
+    SOURCE_NAME,
+    FILE_NAME,
+    COUNT(*) AS FILE_VERSIONS
+FROM FINAI_DEV.BRONZE.INGESTION_FILE_LOG
+GROUP BY SOURCE_NAME, FILE_NAME;
+
+
+Purpose:
+Check whether the same filename has multiple versions.
+
+
+============================================================
+22. TEST SAME FILE TWICE
+============================================================
+
+FIRST:
+
+python -m src.ingestion.bronze_ingestion customer
+
+
+SECOND:
+
+python -m src.ingestion.bronze_ingestion customer
+
+
+Expected:
+
+First run:
+LOAD
+
+Second run:
+SKIP
+
+Reason:
+Same filename + same SHA256.
+
+
+============================================================
+23. TEST SAME FILE WITH NEW CONTENT
+============================================================
+
+1. Load original customers.csv.
+
+2. Change/add data in:
+
+data/customers/customers.csv
+
+3. Run:
+
+python -m src.ingestion.bronze_ingestion customer
+
+
+Expected:
+
+Same filename
++
+different SHA256
+=
+NEW VERSION LOAD
+
+
+This is the important real-world test.
+
+
+============================================================
+24. TEST FORCE
+============================================================
+
+python -m src.ingestion.bronze_ingestion customer --force
+
+
+Expected:
+
+Intentional reload.
+
+
+Use this for testing only.
+
+Normal production ingestion should NOT depend on --force.
+
+
+============================================================
+25. TEST TRUNCATE + RELOAD
+============================================================
+
+Snowflake:
+
+TRUNCATE TABLE FINAI_DEV.BRONZE.CUSTOMER_RAW;
+
+
+Then:
+
+python -m src.ingestion.bronze_ingestion customer --force
+
+
+Why --force?
+
+Because the ingestion log still says the file was already loaded.
+
+The log prevents accidental duplicate loads.
+
+After truncating the table, you intentionally want to reload it.
+
+
+============================================================
+26. STAGE CHECKS
+============================================================
+
+SHOW STAGES
+IN SCHEMA FINAI_DEV.BRONZE;
+
+
+Purpose:
+List Snowflake stages.
+
+
+SHOW STAGES LIKE 'FINAI_BRONZE_INGEST_STAGE'
+IN SCHEMA FINAI_DEV.BRONZE;
+
+
+Purpose:
+Check the existing Bronze ingestion stage.
+
+
+DESC STAGE FINAI_DEV.BRONZE.FINAI_BRONZE_INGEST_STAGE;
+
+
+Purpose:
+Inspect stage configuration.
+
+
+LIST @FINAI_DEV.BRONZE.FINAI_BRONZE_INGEST_STAGE;
+
+
+Purpose:
+List files currently stored in the stage.
+
+
+============================================================
+27. FILE FORMAT CHECKS
+============================================================
+
+SHOW FILE FORMATS
+IN SCHEMA FINAI_DEV.BRONZE;
+
+
+Purpose:
+List file formats.
+
+
+DESC FILE FORMAT FINAI_DEV.BRONZE.<FILE_FORMAT_NAME>;
+
+
+Purpose:
+Inspect file format definition.
+
+
+Example properties:
+
+TYPE = CSV
+FIELD_DELIMITER = ','
+SKIP_HEADER = 1
+FIELD_OPTIONALLY_ENCLOSED_BY = '"'
+
+
+============================================================
+28. COPY INTO CHECKS
+============================================================
+
+Snowflake:
+
+COPY INTO FINAI_DEV.BRONZE.CUSTOMER_RAW
+FROM @FINAI_DEV.BRONZE.FINAI_BRONZE_INGEST_STAGE
+...
+
+
+Purpose:
+Load staged files into Bronze.
+
+
+Important:
+
+Our Python loader currently executes COPY INTO.
+
+The exact final COPY statement should use
+the Snowflake-managed stage and file format you already created.
+
+
+============================================================
+29. CHECK COPY HISTORY
+============================================================
+
+SELECT *
+FROM TABLE(
+    INFORMATION_SCHEMA.COPY_HISTORY(
+        TABLE_NAME => 'CUSTOMER_RAW',
+        START_TIME => DATEADD('day', -7, CURRENT_TIMESTAMP())
+    )
+)
+ORDER BY LAST_LOAD_TIME DESC;
+
+
+Purpose:
+See recent COPY INTO activity.
+
+
+Useful for troubleshooting:
+- loaded files
+- errors
+- row counts
+- load timestamps
+
+
+============================================================
+30. CHECK TABLE DATA QUALITY
+============================================================
+
+SELECT COUNT(*)
+FROM FINAI_DEV.BRONZE.CUSTOMER_RAW;
+
+
+SELECT COUNT(DISTINCT CUSTOMER_ID)
+FROM FINAI_DEV.BRONZE.CUSTOMER_RAW;
+
+
+Purpose:
+Compare total rows vs unique business keys.
+
+
+SELECT CUSTOMER_ID, COUNT(*)
+FROM FINAI_DEV.BRONZE.CUSTOMER_RAW
+GROUP BY CUSTOMER_ID
+HAVING COUNT(*) > 1;
+
+
+Purpose:
+Find duplicate customer IDs.
+
+
+SELECT *
+FROM FINAI_DEV.BRONZE.CUSTOMER_RAW
+WHERE CUSTOMER_ID IS NULL;
+
+
+Purpose:
+Find NULL business keys.
+
+
+============================================================
+31. SILVER CHECKS
+============================================================
+
+SELECT COUNT(*)
+FROM FINAI_DEV.SILVER.CUSTOMER;
+
+
+SELECT *
+FROM FINAI_DEV.SILVER.CUSTOMER
+LIMIT 10;
+
+
+Purpose:
+Validate Silver transformation.
+
+
+Check duplicates:
+
+SELECT CUSTOMER_ID, COUNT(*)
+FROM FINAI_DEV.SILVER.CUSTOMER
+GROUP BY CUSTOMER_ID
+HAVING COUNT(*) > 1;
+
+
+============================================================
+32. GOLD CHECKS
+============================================================
+
+SHOW TABLES IN SCHEMA FINAI_DEV.GOLD;
+
+
+SELECT *
+FROM FINAI_DEV.GOLD.CUSTOMER_360
+LIMIT 20;
+
+
+Purpose:
+Inspect Customer 360.
+
+
+============================================================
+33. DATABASE CLEANUP
+============================================================
+
+TRUNCATE TABLE FINAI_DEV.BRONZE.CUSTOMER_RAW;
+
+
+Purpose:
+Remove all rows while keeping table structure.
+
+
+DROP TABLE FINAI_DEV.BRONZE.CUSTOMER_RAW;
+
+
+Purpose:
+Delete table completely.
+
+WARNING:
+Do not use DROP casually.
+
+
+============================================================
+34. LIQUIBASE DDL STRUCTURE
+============================================================
+
+sql/ddl/changelog-master.yml
+
+Purpose:
+Master file that registers changesets.
+
+
+sql/ddl/bronze/001_customer_raw.sql
+
+Purpose:
+Bronze customer table DDL.
+
+
+sql/ddl/bronze/002_account_raw.sql
+
+Purpose:
+Bronze account table DDL.
+
+
+Example:
+
+--liquibase formatted sql
+--changeset anshu:bronze-customer-add-tier-001
+
+ALTER TABLE BRONZE.CUSTOMER_RAW
+ADD COLUMN CUSTOMER_TIER VARCHAR;
+
+--rollback ALTER TABLE BRONZE.CUSTOMER_RAW
+--rollback DROP COLUMN CUSTOMER_TIER;
+
+
+============================================================
+35. IMPORTANT LIQUIBASE RULE
+============================================================
+
+NEVER modify an already deployed changeset.
+
+BAD:
+
+Change:
+
+bronze/001_customer_raw.sql
+
+after it has already been deployed.
+
+
+GOOD:
+
+Create:
+
+bronze/007_customer_add_tier.sql
+
+Then register it in:
+
+changelog-master.yml
+
+
+Reason:
+
+Liquibase stores checksums for deployed changesets.
+
+Changing old SQL can create checksum errors.
+
+
+============================================================
+36. NORMAL DDL CHANGE FLOW
+============================================================
+
+Create feature branch:
+
+git switch dev
+git pull origin dev
+git switch -c feature/customer-tier
+
+
+Create:
+
+sql/ddl/bronze/007_customer_add_tier.sql
+
+
+Update:
+
+sql/ddl/changelog-master.yml
+
+
+Validate:
+
+liquibase validate
+
+
+Review:
+
+liquibase update-sql
+
+
+Deploy DEV:
+
+liquibase update
+
+
+Test Snowflake.
+
+
+Commit:
+
+git add .
+git commit -m "Add customer tier column"
+
+
+Push:
+
+git push -u origin feature/customer-tier
+
+
+Create Pull Request:
+
+feature/customer-tier -> dev
+
+
+After DEV is approved/tested:
+
+dev -> qa
+
+Then:
+
+qa -> main
+
+Then:
+
+PROD approval/deployment.
+
+
+============================================================
+37. LOCAL END-TO-END TEST
+============================================================
+
+This is the most important local testing sequence.
+
+STEP 1
+------
+
+Check project:
+
+git status
+
+
+STEP 2
+------
+
+Activate environment:
+
+.\.venv\Scripts\Activate.ps1
+
+
+STEP 3
+------
+
+Check Python:
+
+python --version
+
+
+STEP 4
+------
+
+Run tests:
+
+python -m pytest -v
+
+
+STEP 5
+------
+
+Check .env:
+
+Test-Path .env
+
+
+STEP 6
+------
+
+Run ONE source:
+
+python -m src.ingestion.bronze_ingestion customer
+
+
+STEP 7
+------
+
+Check Snowflake:
+
+SELECT COUNT(*)
+FROM FINAI_DEV.BRONZE.CUSTOMER_RAW;
+
+
+STEP 8
+------
+
+Check ingestion log:
+
+SELECT *
+FROM FINAI_DEV.BRONZE.INGESTION_FILE_LOG
+ORDER BY LOADED_AT DESC;
+
+
+STEP 9
+------
+
+Run customer again:
+
+python -m src.ingestion.bronze_ingestion customer
+
+
+Expected:
+
+SKIPPED
+
+
+STEP 10
+-------
+
+Change customers.csv.
+
+
+Run:
+
+python -m src.ingestion.bronze_ingestion customer
+
+
+Expected:
+
+NEW VERSION LOADED
+
+
+STEP 11
+-------
+
+Run all sources:
+
+python -m src.ingestion.bronze_ingestion
+
+
+STEP 12
+-------
+
+Check all Bronze counts.
+
+
+============================================================
+38. WHY WE DO NOT ALWAYS USE --force
+============================================================
+
+Normal production:
+
+python -m src.ingestion.bronze_ingestion customer
+
+The program calculates:
+
+SHA256(file)
+
+Then checks:
+
+SOURCE_NAME
++
+FILE_NAME
++
+FILE_HASH
+
+If that exact file version already succeeded:
+
+SKIP
+
+
+If the filename is same but hash changed:
+
+LOAD
+
+
+This prevents:
+
+customer.csv
+customer.csv
+customer.csv
+customer.csv
+
+from accidentally loading the same data repeatedly.
+
+
+--force means:
+
+"I KNOW this file was already processed,
+but intentionally load it again."
+
+
+Therefore:
+
+--force = exception/testing/recovery
+
+NOT:
+
+--force = normal ingestion
+
+
+============================================================
+39. RECOMMENDED REAL-WORLD FILE VERSION LOGIC
+============================================================
+
+File arrives:
+
+customers.csv
+Hash A
+
+Log:
+
+customer | customers.csv | Hash A | SUCCESS
+
+
+Same file arrives again:
+
+customers.csv
+Hash A
+
+Result:
+
+SKIP
+
+
+New contents arrive:
+
+customers.csv
+Hash B
+
+Log:
+
+customer | customers.csv | Hash B | SUCCESS
+
+
+Now history contains:
+
+customers.csv | Hash A
+customers.csv | Hash B
+
+
+This is why INGESTION_FILE_LOG must allow
+multiple hashes for the same filename.
+
+
+The current PRIMARY KEY:
+
+SOURCE_NAME + FILE_NAME
+
+is NOT sufficient for this requirement.
+
+
+It must be redesigned to support:
+
+SOURCE_NAME + FILE_NAME + FILE_HASH
+
+or another version/surrogate key.
+
+
+============================================================
+40. QUICK TROUBLESHOOTING
+============================================================
+
+ERROR:
+
+Missing required environment variables
+
+Check:
+
+Get-Content .env
+
+Especially:
+
+SNOWFLAKE_PASSWORD
+
+
+------------------------------------------------------------
+
+ERROR:
+
+ModuleNotFoundError
+
+Run:
+
+python -m pip install -r requirements.txt
+
+
+------------------------------------------------------------
+
+ERROR:
+
+No module named pandas
+
+Run:
+
+python -m pip install pandas
+
+
+------------------------------------------------------------
+
+ERROR:
+
+No module named snowflake.connector
+
+Run:
+
+python -m pip install snowflake-connector-python
+
+
+------------------------------------------------------------
+
+ERROR:
+
+Liquibase not recognized
+
+Run:
+
+liquibase --version
+
+If not found:
+Liquibase CLI is not installed/configured in PATH.
+
+
+------------------------------------------------------------
+
+ERROR:
+
+Git says "MERGING"
+
+Run:
+
+git status
+
+Resolve the merge before creating another branch.
+
+
+------------------------------------------------------------
+
+ERROR:
+
+Liquibase checksum mismatch
+
+DO NOT immediately edit/clear everything.
+
+First identify the changeset.
+
+Usually the correct fix is:
+
+Do not modify deployed changeset.
+
+Create a NEW changeset.
+
+
+------------------------------------------------------------
+
+ERROR:
+
+COPY loaded 0 rows
+
+Check:
+
+1. Stage
+2. File exists
+3. COPY history
+4. File name
+5. Snowflake load metadata
+6. Whether --force is intentionally required
+
+
+============================================================
+41. MOST USED COMMANDS - QUICK LIST
+============================================================
+
+PROJECT:
+
+cd "<project>"
+code .
+Get-ChildItem
+Get-Location
+
+
+PYTHON:
+
+.\.venv\Scripts\Activate.ps1
+python --version
+python -m pytest -v
+python -m pip install -r requirements.txt
+
+
+INGESTION:
+
+python -m src.ingestion.bronze_ingestion
+python -m src.ingestion.bronze_ingestion customer
+python -m src.ingestion.bronze_ingestion customer --force
+
+
+GIT:
+
+git status
+git branch -a
+git fetch origin
+git pull origin dev
+git switch dev
+git switch -c feature/<name>
+git diff
+git add .
+git commit -m "<message>"
+git push -u origin feature/<name>
+git log --oneline -10
+
+
+LIQUIBASE:
+
+liquibase --version
+liquibase validate
+liquibase status
+liquibase update-sql
+liquibase update
+liquibase history
+
+
+SNOWFLAKE:
+
+SHOW DATABASES;
+SHOW SCHEMAS IN DATABASE FINAI_DEV;
+SHOW TABLES IN SCHEMA FINAI_DEV.BRONZE;
+DESC TABLE FINAI_DEV.BRONZE.CUSTOMER_RAW;
+
+SELECT COUNT(*) FROM FINAI_DEV.BRONZE.CUSTOMER_RAW;
+
+SELECT *
+FROM FINAI_DEV.BRONZE.INGESTION_FILE_LOG
+ORDER BY LOADED_AT DESC;
+
+SHOW STAGES IN SCHEMA FINAI_DEV.BRONZE;
+
+SHOW FILE FORMATS IN SCHEMA FINAI_DEV.BRONZE;
+
+LIST @FINAI_DEV.BRONZE.FINAI_BRONZE_INGEST_STAGE;
+
+
+============================================================
+END
+============================================================

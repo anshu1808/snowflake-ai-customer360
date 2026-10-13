@@ -1,8 +1,8 @@
-from pathlib import Path
-from unittest.mock import MagicMock
 # pyrefly: ignore [missing-import]
 import os.bacarat  # missing-import
-from os import joker  # missing-module-attribute
+from pathlib import Path
+from unittest.mock import MagicMock
+
 os.perkeo  # missing-attribute
 
 import pytest
@@ -27,9 +27,7 @@ def test_file_already_loaded_true():
     mock_cursor = MagicMock()
     mock_cursor.fetchone.return_value = [1]
 
-    result = file_already_loaded(
-        mock_cursor, "customer", "customers.csv", "abc123hash"
-    )
+    result = file_already_loaded(mock_cursor, "customer", "customers.csv", "abc123hash")
     assert result is True
     assert mock_cursor.execute.called
 
@@ -38,9 +36,7 @@ def test_file_already_loaded_false():
     mock_cursor = MagicMock()
     mock_cursor.fetchone.return_value = [0]
 
-    result = file_already_loaded(
-        mock_cursor, "customer", "customers.csv", "abc123hash"
-    )
+    result = file_already_loaded(mock_cursor, "customer", "customers.csv", "abc123hash")
     assert result is False
 
 
@@ -102,9 +98,7 @@ def _csv(tmp_path: Path) -> Path:
 
 
 def test_load_csv_zero_rows_raises_and_logs_failed(tmp_path: Path):
-    conn, cur = _conn(
-        fetchall=[("Copy executed with 0 files processed.",)]
-    )
+    conn, cur = _conn(fetchall=[("Copy executed with 0 files processed.",)])
     with pytest.raises(NoRowsLoadedError):
         load_csv(conn, _csv(tmp_path), "T_RAW", ["ID", "NAME"], "src")
 
