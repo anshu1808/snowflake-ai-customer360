@@ -1,6 +1,5 @@
-from unittest.mock import MagicMock
 from pathlib import Path
-import pytest
+from unittest.mock import MagicMock
 
 from src.ingestion.snowflake_loader import (
     calculate_file_hash,

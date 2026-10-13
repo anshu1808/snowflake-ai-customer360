@@ -1,6 +1,10 @@
 databaseChangeLog:
 
   - include:
+      file: common/001_schemas.sql
+      relativeToChangelogFile: true
+
+  - include:
       file: bronze/001_customer_raw.sql
       relativeToChangelogFile: true
 
@@ -42,4 +46,20 @@ databaseChangeLog:
 
   - include:
       file: silver/005_product.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: audit/001_pipeline_run.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: audit/002_dq_results.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: gold/001_customer_360.sql
+      relativeToChangelogFile: true
+
+  - include:
+      file: gold/002_transaction_monthly.sql
       relativeToChangelogFile: true

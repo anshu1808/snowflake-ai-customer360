@@ -130,9 +130,7 @@ def load_csv(
     cursor = connection.cursor()
 
     try:
-        if not force and file_already_loaded(
-            cursor, source_name, file_name, file_hash
-        ):
+        if not force and file_already_loaded(cursor, source_name, file_name, file_hash):
             print(
                 f"SKIPPED: {source_name} / {file_name} already loaded "
                 f"(use force=True / --force to reload)."
@@ -179,8 +177,13 @@ def load_csv(
             )
 
         _write_log(
-            cursor, source_name, file_name, file_size, file_hash,
-            rows_loaded, "SUCCESS",
+            cursor,
+            source_name,
+            file_name,
+            file_size,
+            file_hash,
+            rows_loaded,
+            "SUCCESS",
         )
         connection.commit()
         return rows_loaded
@@ -189,8 +192,13 @@ def load_csv(
         try:
             connection.rollback()
             _write_log(
-                cursor, source_name, file_name, file_size, file_hash,
-                0, "FAILED",
+                cursor,
+                source_name,
+                file_name,
+                file_size,
+                file_hash,
+                0,
+                "FAILED",
             )
             connection.commit()
         except Exception:
